@@ -336,6 +336,10 @@ function buildHeaders(config: ResolvedConfig): Record<string, string> {
   return headers;
 }
 
+function canPromptForExa(config: ResolvedConfig): boolean {
+  return config.authMode === "none" || config.apiKey.length > 0;
+}
+
 async function postJson(
   config: ResolvedConfig,
   endpoint: string,
@@ -868,6 +872,9 @@ export default function exaExtension(pi: ExtensionAPI) {
   });
 
   pi.on("before_agent_start", async (event) => {
+    const config = loadConfig();
+    if (!canPromptForExa(config)) return;
+
     return {
       systemPrompt: `${event.systemPrompt}\n\n${EXA_SYSTEM_PROMPT}`,
     };
