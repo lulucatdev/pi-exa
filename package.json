@@ -1,0 +1,27 @@
+{
+  "name": "pi-exa",
+  "version": "0.1.0",
+  "description": "Standalone Exa tools for pi: web search, content extraction, code context, company research, and asynchronous deep research.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lulucatdev/pi-exa.git"
+  },
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "exa",
+    "web-search"
+  ],
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ]
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@mariozechner/pi-ai": "*",
+    "@sinclair/typebox": "*"
+  }
+}
