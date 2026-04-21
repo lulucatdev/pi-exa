@@ -851,13 +851,13 @@ const deepResearchCheckSchema = Type.Object({
 
 const EXA_SYSTEM_PROMPT = `## Exa
 
-Exa tools are installed. Use them for live web research when the task benefits from result discovery, extraction controls, or cited synthesis.
+Exa tools are installed. Use them proactively for live web research, current information, public examples, and cited synthesis. When an answer depends on recent changes, release notes, web-wide source discovery, or external validation, prefer an Exa tool instead of answering from memory.
 
 Choose tools as follows:
-- Use exa-search for broad web research that benefits from domain filters, date filters, highlights, summaries, or livecrawl.
+- Default to exa-search for current events, release notes, comparisons, domain-limited research, and any question that should be grounded in live web sources.
 - Use exa-answer when the user wants a synthesized answer grounded in live web results with citations.
-- Use exa-contents when the user already has one or more URLs and wants clean extraction, highlights, or summaries.
-- Use exa-code-context when the user needs public code examples, setup patterns, or API usage from the wider web.
+- Use exa-contents when the user already has one or more URLs, or after exa-search surfaces promising pages that need close reading.
+- Use exa-code-context when the task involves framework or library usage, migration examples, upgrade notes, API syntax, or implementation patterns from the wider web.
 - Use exa-company-research for company, competitor, market, news, and public-profile research.
 - Use exa-linkedin-search for public people or role discovery by title, company, or expertise.
 - Use exa-crawl when the user wants a site and related subpages explored from seed URLs.
@@ -1258,11 +1258,12 @@ export default function exaExtension(pi: ExtensionAPI) {
     name: "exa-search",
     label: "Exa Search",
     description: "Search the web with Exa. Supports categories, domain filters, livecrawl options, and optional extracted text, highlights, and summaries.",
-    promptSnippet: "Search the web with Exa when the user wants current sources, citations, or focused domain search.",
+    promptSnippet: "Default Exa tool for current information, release notes, citations, or broad web discovery.",
     promptGuidelines: [
       "NEVER use Exa for GitHub content (issues, PRs, files, repos). Use `gh` CLI or web-fetch instead — they are free, faster, and return structured data.",
-      "Use exa-search for web research, current events, and source gathering when the task benefits from domain filters, recency filters, highlights, summaries, or livecrawl.",
-      "Use exa-search when the user needs result discovery across the web rather than extraction from a single known page.",
+      "Prefer exa-search over memory when the request may depend on current information, release notes, recent product changes, or external confirmation.",
+      "Use exa-search when the user needs web-wide discovery or domain/date filtering rather than extraction from a single known page.",
+      "After exa-search finds promising pages, follow with exa-contents when the answer depends on close reading of a small number of URLs.",
       "Prefer includeHighlights before includeText when you need a concise answer with citations.",
     ],
     parameters: searchSchema,
@@ -1283,9 +1284,10 @@ export default function exaExtension(pi: ExtensionAPI) {
     name: "exa-answer",
     label: "Exa Answer",
     description: "Ask Exa for a synthesized answer grounded in live web search results.",
-    promptSnippet: "Get a grounded answer with citations from Exa when the user asks a factual web question.",
+    promptSnippet: "Use when a factual web question needs a sourced answer rather than a raw result list.",
     promptGuidelines: [
       "NEVER use Exa for GitHub content (issues, PRs, files, repos). Use `gh` CLI or web-fetch instead.",
+      "Prefer exa-answer over unsourced prose when the user wants a factual answer backed by live citations.",
       "Use exa-answer when the user wants a direct answer backed by live web citations rather than a raw result list.",
       "Use exa-answer when synthesis is more useful than inspecting individual search results.",
     ],
@@ -1321,11 +1323,11 @@ export default function exaExtension(pi: ExtensionAPI) {
     name: "exa-contents",
     label: "Exa Contents",
     description: "Fetch clean page contents, highlights, and summaries for specific URLs using Exa.",
-    promptSnippet: "Fetch clean content from URLs with Exa when the user provides specific pages to read.",
+    promptSnippet: "Read one or more specific URLs with Exa after the user provides links or exa-search identifies pages worth inspecting.",
     promptGuidelines: [
       "NEVER use Exa for GitHub content (issues, PRs, files, repos). Use `gh` CLI or web-fetch instead.",
       "Use exa-contents when the user already has one or more URLs and wants clean extraction, highlights, or summaries.",
-      "Use exa-contents after exa-search when a small set of result pages needs closer reading.",
+      "Use exa-contents aggressively after exa-search when a small set of result pages needs closer reading.",
     ],
     parameters: contentsSchema,
     async execute(_toolCallId, params, signal, onUpdate) {
@@ -1351,11 +1353,11 @@ export default function exaExtension(pi: ExtensionAPI) {
     name: "exa-code-context",
     label: "Exa Code Context",
     description: "Search Exa's code context index for framework usage, API syntax, and code examples.",
-    promptSnippet: "Get code examples and API usage from Exa when the user asks for implementation context from the web.",
+    promptSnippet: "Use for framework or library implementation questions when concrete public examples, migration notes, or API usage patterns would help.",
     promptGuidelines: [
       "NEVER use Exa for GitHub content (issues, PRs, files, repos). Use `gh` CLI or web-fetch instead.",
-      "Use exa-code-context for framework examples, library setup, and API syntax when source code examples matter more than prose pages.",
-      "Prefer Context7 first for official library docs, then use exa-code-context when broader public examples are useful.",
+      "Use exa-code-context proactively for framework, library, migration, upgrade, and API-usage questions when concrete examples from the wider web would reduce guesswork.",
+      "Prefer Context7 first for official library docs, then use exa-code-context for broader examples, migration writeups, forum posts, and implementation snippets.",
     ],
     parameters: codeContextSchema,
     async execute(_toolCallId, params, signal, onUpdate) {
