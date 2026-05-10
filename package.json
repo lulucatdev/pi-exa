@@ -1,6 +1,6 @@
 {
   "name": "@capyup/pi-exa",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Exa web research for pi via five first-class tools + skill + local CLI. Uses the official exa-js SDK directly — no MCP server, no adapter. Tools: exa_search, exa_similar, exa_fetch, exa_answer, exa_research. Supports real-time livecrawl, subpage extraction, structured JSON output, and deep multi-step research.",
   "repository": {
     "type": "git",
