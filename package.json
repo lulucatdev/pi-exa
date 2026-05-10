@@ -1,21 +1,32 @@
 {
-  "name": "pi-exa",
+  "name": "@capyup/pi-exa",
   "version": "0.3.0",
   "description": "Exa web research for pi via a skill + local CLI. Uses the official exa-js SDK directly — no MCP server, no adapter, ~120 tokens of permanent context.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/capyup/pi-exa.git"
+    "url": "https://github.com/capyup/pi-exa"
   },
+  "author": "capyup",
   "license": "MIT",
   "type": "module",
   "keywords": [
     "pi-package",
+    "pi",
     "pi-extension",
     "pi-skill",
     "exa",
     "web-search",
     "research"
   ],
+  "files": [
+    "extensions",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "pi": {
     "extensions": ["./extensions"],
     "skills": ["./skills"]
@@ -24,6 +35,6 @@
     "exa-js": "^2.12.1"
   },
   "peerDependencies": {
-    "@earendil-works/pi-coding-agent": "^0.74.0"
+    "@earendil-works/pi-coding-agent": "*"
   }
 }

@@ -36,11 +36,13 @@ usage instructions only enter context when the skill triggers.
 ## Install
 
 ```bash
-pi install git:github.com/capyup/pi-exa
+pi install npm:@capyup/pi-exa
 ```
 
-This clones the repo, runs `npm install` to pull `exa-js`, registers the
-extension and the skill.
+(Or `pi install git:github.com/capyup/pi-exa` if you want to track `main`
+directly.)
+
+Either form pulls `exa-js` and registers the extension and the skill.
 
 Then save your API key (get one from <https://dashboard.exa.ai>):
 
@@ -102,7 +104,7 @@ will not.
 
 ## Migration from v0.2.x (MCP) and v0.1.x (bespoke tools)
 
-1. `pi update https://github.com/capyup/pi-exa.git`
+1. `pi update npm:@capyup/pi-exa` (or `pi update https://github.com/capyup/pi-exa.git` if you installed from git)
 2. Your existing key in `~/.pi/exa.config.json` is reused; no need to
    re-run `/exa-auth` unless you want to change it.
 3. (Optional) Open `~/.pi/agent/mcp.json` and remove the `exa` entry
