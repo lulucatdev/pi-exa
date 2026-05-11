@@ -126,6 +126,13 @@ function clip(s, n) {
 	return `${t.slice(0, n - 1)}…`;
 }
 
+// Tool-output footer that nudges the model to keep source URLs in its
+// reply to the user. Placed as a plain markdown trailer so it sits at the
+// model's most-recent-attention window, where prompt-level instructions
+// (e.g. SKILL.md description) tend to be diluted.
+const SURFACE_HINT_FOOTER =
+	"\n---\nCite the URL(s) above when relaying this fact to the user. URLs are part of the answer, not metadata.";
+
 // ─── status ───────────────────────────────────────────────────────────
 
 function cmdStatus() {
@@ -273,6 +280,7 @@ async function cmdSearch(argv) {
 		lines.push("");
 		lines.push(`_cost: $${res.costDollars.total.toFixed(4)}_`);
 	}
+	lines.push(SURFACE_HINT_FOOTER);
 	process.stdout.write(`${lines.join("\n")}\n`);
 }
 
@@ -352,6 +360,7 @@ async function cmdFetch(argv) {
 			for (const h of hls) lines.push(`- ${clip(h, 400)}`);
 		}
 	});
+	lines.push(SURFACE_HINT_FOOTER);
 	process.stdout.write(`${lines.join("\n")}\n`);
 }
 
@@ -411,6 +420,7 @@ async function cmdAnswer(argv) {
 			lines.push(`  [${i + 1}] ${title} — ${c.url}`);
 		});
 	}
+	lines.push(SURFACE_HINT_FOOTER);
 	process.stdout.write(`${lines.join("\n")}\n`);
 }
 
@@ -503,6 +513,7 @@ async function cmdSimilar(argv) {
 		lines.push("");
 		lines.push(`_cost: $${res.costDollars.total.toFixed(4)}_`);
 	}
+	lines.push(SURFACE_HINT_FOOTER);
 	process.stdout.write(`${lines.join("\n")}\n`);
 }
 
@@ -642,7 +653,39 @@ Key file: ${KEY_PATH}
 // ─── dispatch ─────────────────────────────────────────────────────────
 
 const sub = process.argv[2];
-const rest = process.argv.slice(3);
+let rest = process.argv.slice(3);
+
+// Strip the internal audit marker (used by the native extension to label
+// CLI invocations that originated from a native tool call). Race-free
+// because it is per-argv, not env-var.
+const _auditInternalIdx = rest.indexOf("--_audit_internal");
+const _auditIsInternal = _auditInternalIdx >= 0;
+if (_auditIsInternal) rest.splice(_auditInternalIdx, 1);
+
+// Silent audit hook: writes a JSON line to PI_EXA_AUDIT_LOG when set.
+// The agent never sees this; it only fires when an external harness enables it.
+// source labels:
+//   cli_internal — spawned by an extension's native tool call (de-dup signal)
+//   cli_direct   — invoked directly via bash by the agent
+if (sub && !["-h", "--help", "help", "status"].includes(sub) && process.env.PI_EXA_AUDIT_LOG) {
+	try {
+		const { appendFileSync } = await import("node:fs");
+		const cliSource = _auditIsInternal ? "cli_internal" : "cli_direct";
+		appendFileSync(
+			process.env.PI_EXA_AUDIT_LOG,
+			JSON.stringify({
+				ts: new Date().toISOString(),
+				run_id: process.env.PI_EXA_AUDIT_RUN_ID ?? "",
+				pid: process.pid,
+				source: cliSource,
+				tool: `exa_${sub}`,
+				argv: rest,
+			}) + "\n",
+		);
+	} catch {
+		// never let audit failure break the CLI
+	}
+}
 
 switch (sub) {
 	case undefined:

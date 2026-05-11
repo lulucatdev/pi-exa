@@ -16,7 +16,7 @@
  *   - Two slash commands for key management: /exa-auth and /exa-status.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
@@ -24,6 +24,26 @@ import { Type, type Static } from "@sinclair/typebox";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CLI_PATH = path.resolve(__dirname, "../../skills/pi-exa/scripts/exa.mjs");
+
+// ─── audit hook (silent; controlled by env var; agent never sees this) ─
+
+function auditNativeCall(tool: string, params: unknown): void {
+	const logPath = process.env.PI_EXA_AUDIT_LOG;
+	if (!logPath) return;
+	try {
+		const line = JSON.stringify({
+			ts: new Date().toISOString(),
+			run_id: process.env.PI_EXA_AUDIT_RUN_ID ?? "",
+			pid: process.pid,
+			source: "native",
+			tool,
+			params,
+		});
+		appendFileSync(logPath, line + "\n");
+	} catch {
+		// never let audit failure break the tool
+	}
+}
 
 const HOME_DIR = process.env.HOME ?? process.cwd();
 const KEY_PATH = path.join(HOME_DIR, ".pi", "exa.config.json");
@@ -75,10 +95,18 @@ async function runExa(
 	signal: AbortSignal | undefined,
 	cwd: string,
 ): Promise<{ stdout: string; stderr: string; code: number }> {
-	const result = await pi.exec(process.execPath, [CLI_PATH, subcommand, ...cliArgs], {
-		signal: signal ?? new AbortController().signal,
-		cwd,
-	});
+	// Inject an argv-level marker so the CLI's audit hook can label this call
+	// as internal (triggered by a native tool), rather than a direct bash
+	// invocation by the agent. argv-level avoids env-var races under
+	// concurrent tool calls.
+	const result = await pi.exec(
+		process.execPath,
+		[CLI_PATH, subcommand, "--_audit_internal", ...cliArgs],
+		{
+			signal: signal ?? new AbortController().signal,
+			cwd,
+		},
+	);
 	return {
 		stdout: result.stdout ?? "",
 		stderr: result.stderr ?? "",
@@ -347,6 +375,7 @@ export default function exaExtension(pi: ExtensionAPI) {
 		parameters: exaSearchSchema,
 
 		async execute(_toolCallId, params: ExaSearchParams, signal, onUpdate, ctx) {
+			auditNativeCall("exa_search", { query: params.query, num: params.num, days: params.days, type: params.type });
 			const query = params.query.trim();
 			if (!query) {
 				throw new Error("exa_search: query is empty.");
@@ -380,6 +409,7 @@ export default function exaExtension(pi: ExtensionAPI) {
 		parameters: exaFetchSchema,
 
 		async execute(_toolCallId, params: ExaFetchParams, signal, onUpdate, ctx) {
+			auditNativeCall("exa_fetch", { urls: params.urls, mode: params.mode, livecrawl: params.livecrawl, subpages: params.subpages });
 			if (!params.urls.length) {
 				throw new Error("exa_fetch: urls array is empty.");
 			}
@@ -412,6 +442,7 @@ export default function exaExtension(pi: ExtensionAPI) {
 		parameters: exaSimilarSchema,
 
 		async execute(_toolCallId, params: ExaSimilarParams, signal, onUpdate, ctx) {
+			auditNativeCall("exa_similar", { url: params.url, num: params.num, excludeSource: params.excludeSource });
 			const url = params.url.trim();
 			if (!url) {
 				throw new Error("exa_similar: url is empty.");
@@ -445,6 +476,7 @@ export default function exaExtension(pi: ExtensionAPI) {
 		parameters: exaAnswerSchema,
 
 		async execute(_toolCallId, params: ExaAnswerParams, signal, onUpdate, ctx) {
+			auditNativeCall("exa_answer", { question: params.question });
 			const question = params.question.trim();
 			if (!question) {
 				throw new Error("exa_answer: question is empty.");
@@ -478,6 +510,7 @@ export default function exaExtension(pi: ExtensionAPI) {
 		parameters: exaResearchSchema,
 
 		async execute(_toolCallId, params: ExaResearchParams, signal, onUpdate, ctx) {
+			auditNativeCall("exa_research", { instructions: params.instructions, model: params.model });
 			const instructions = params.instructions.trim();
 			if (!instructions) {
 				throw new Error("exa_research: instructions are empty.");

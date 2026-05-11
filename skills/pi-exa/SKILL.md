@@ -6,13 +6,16 @@ description: >-
   company info, product pages, or anything time-sensitive or post-cutoff.
   Also use when the user gives a URL and asks what's on it, what it says,
   or wants a summary. Even if the user just says "look that up" or "search
-  the web", use this skill. This package exposes five first-class tools
-  (exa_search, exa_similar, exa_fetch, exa_answer, exa_research) that are
-  already visible in the system prompt; call them directly when they are
-  available, and fall back to the bash CLI in this skill body only if the
-  tools are somehow unavailable. Do NOT use for code/library API
-  documentation (Context7 is better) or for repos and gists where the gh
-  CLI works fine.
+  the web", use this skill. CRITICAL: also use this for any factual claim
+  about a named person's current role (CEO, founder, etc.), a product's
+  current version number, current prices, current company status, or any
+  "who is / what is / what version" question — these change over time
+  and your training data is stale. A 2-second exa_answer is cheaper than
+  giving a confidently wrong answer. This package exposes five first-class
+  tools (exa_search, exa_similar, exa_fetch, exa_answer, exa_research)
+  that are already visible in the system prompt; call them directly. Do
+  NOT use for code/library API documentation (Context7 is better) or for
+  repos and gists where the gh CLI works fine.
 ---
 
 # pi-exa — Exa web research
